@@ -1,6 +1,8 @@
+from calendar import weekday
 from collections import defaultdict
 from enum import Enum
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 FILE_PATH = "attendance_weekday_500.txt"
 MAX_PLAYERS = 100
@@ -8,7 +10,6 @@ MAX_PLAYERS = 100
 players_id = {}
 
 id_cnt = 0
-
 
 
 class WeekdayEnum(Enum):
@@ -19,6 +20,20 @@ class WeekdayEnum(Enum):
     friday = "friday"
     saturday = "saturday"
     sunday = "sunday"
+
+
+class AbstractPlayer(ABC):
+    @abstractmethod
+    def cal_points(self, weekday: WeekdayEnum):
+        ...
+
+    @abstractmethod
+    def cal_special_points(self):
+        ...
+
+    @abstractmethod
+    def cal_grade(self):
+        ...
 
 
 class Player:
@@ -76,7 +91,52 @@ class Players:
         return self.players[id]
 
 
+@dataclass
+class DataLine:
+    name: str
+    weekday: str
+
+
+class AbstractFileManager(ABC):
+    def __init__(self, file_path: str):
+        self.file_path: str = file_path
+        self.lines: list[str] | None = None
+
+    @abstractmethod
+    def read_file(self):
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def parse_data(line: str) -> DataLine:
+        ...
+
+
+class FileManager(AbstractFileManager):
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self.lines = self.read_file()
+
+    def read_file(self):
+        with open(self.file_path, encoding='utf-8') as f:
+            return f.readlines()
+
+    @staticmethod
+    def parse_data(line: str) -> DataLine:
+        parts = line.strip().split()
+        if len(parts) != 2:
+            raise ValueError
+        return DataLine(name=parts[0], weekday=parts[1])
+
+
+class AttendanceManager:
+    def __init__(self, players: AbstractPlayer, file_manager: AbstractFileManager):
+        self.players = players
+        self.file_manager = file_manager
+
+
 players = Players()
+file_manager = FileManager(FILE_PATH)
 
 
 @dataclass
@@ -97,18 +157,10 @@ score_factory = {
 }
 
 
-def read_file(file_path):
+def read_file(file_path: str) -> list[str]:
     with open(file_path, encoding='utf-8') as f:
         lines = f.readlines()
     return lines
-
-
-def add_player_if_new(name: str):
-    global id_cnt
-    if name not in players_id:
-        id_cnt += 1
-        players_id[name] = id_cnt
-        names[id_cnt] = name
 
 
 def cal_points(name: str, weekday: str):
@@ -138,31 +190,10 @@ def print_player_grade(id):
         print("NORMAL")
 
 
-def get_grade(point):
-    if point >= 50:
-        return 1
-    elif point >= 30:
-        return 2
-    else:
-        return 0
-
-
-def parse_data(line):
-    parts = line.strip().split()
-    if len(parts) != 2:
-        raise ValueError
-    return parts
-
-
 def run():
-    try:
-        lines = read_file(FILE_PATH)
-    except FileNotFoundError:
-        raise ("파일을 찾을 수 없습니다.")
-
-    for line in lines:
-        parts = parse_data(line)
-        cal_points(name=parts[0], weekday=parts[1])
+    for line in file_manager.lines:
+        parts = file_manager.parse_data(line)
+        cal_points(parts.name, parts.weekday)
 
     for player in players:
         player.cal_special_points()
