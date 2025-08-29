@@ -1,7 +1,7 @@
-from collections import defaultdict
-from enum import Enum
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from collections import defaultdict
+from dataclasses import dataclass
+from enum import Enum
 from typing import Iterator
 
 FILE_PATH = "attendance_weekday_500.txt"
