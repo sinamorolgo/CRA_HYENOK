@@ -1,15 +1,11 @@
-from calendar import weekday
 from collections import defaultdict
 from enum import Enum
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from typing import Iterator
 
 FILE_PATH = "attendance_weekday_500.txt"
 MAX_PLAYERS = 100
-
-players_id = {}
-
-id_cnt = 0
 
 
 class WeekdayEnum(Enum):
@@ -23,6 +19,15 @@ class WeekdayEnum(Enum):
 
 
 class AbstractPlayer(ABC):
+    def __init__(self, name, id):
+        self.name = name
+        self.id = id
+        self.dat = defaultdict(int)
+        self.point = 0
+        self.grade = -1
+        self.wed = 0
+        self.weekend = 0
+
     @abstractmethod
     def cal_points(self, weekday: WeekdayEnum):
         ...
@@ -68,7 +73,26 @@ class Player:
             self.grade = 0
 
 
-class Players:
+class AbstractPlayers(ABC):
+    @abstractmethod
+    def get_player_add_if_new(self, name: str)->AbstractPlayer:
+        ...
+
+    @abstractmethod
+    def __iter__(self)->Iterator[AbstractPlayer]:
+        ...
+
+    @abstractmethod
+    def __getitem__(self, id: int) -> AbstractPlayer:
+        ...
+
+    @property
+    @abstractmethod
+    def num_players(self) -> int:
+        ...
+
+
+class Players(AbstractPlayers):
     def __init__(self):
         self.players = defaultdict(None)
         self.map_id = defaultdict(int)
@@ -130,13 +154,45 @@ class FileManager(AbstractFileManager):
 
 
 class AttendanceManager:
-    def __init__(self, players: AbstractPlayer, file_manager: AbstractFileManager):
+    def __init__(self, players: AbstractPlayers, file_manager: AbstractFileManager):
         self.players = players
         self.file_manager = file_manager
 
+    def run(self):
+        for line in self.file_manager.lines:
+            parts = self.file_manager.parse_data(line)
+            player = self.players.get_player_add_if_new(parts.name)
+            player.cal_points(WeekdayEnum(parts.weekday))
 
-players = Players()
-file_manager = FileManager(FILE_PATH)
+        for player in self.players:
+            player.cal_special_points()
+            player.cal_grade()
+
+        for id in range(1, self.players.num_players + 1):
+            self.print_player_grade(id)
+
+        self.separate_section_for_removing_print()
+        for id in range(1, self.players.num_players + 1):
+            if self.is_removing_candi(id):
+                print(self.players[id].name)
+
+    def print_player_grade(self, id: int):
+        player = self.players[id]
+        print(f"NAME : {player.name}, POINT : {player.point}, GRADE : ", end="")
+        if player.grade == 1:
+            print("GOLD")
+        elif player.grade == 2:
+            print("SILVER")
+        else:
+            print("NORMAL")
+
+    def separate_section_for_removing_print(self):
+        print("\nRemoved player")
+        print("==============")
+
+    def is_removing_candi(self, id):
+        player = self.players[id]
+        return player.grade not in (1, 2) and player.wed == 0 and player.weekend == 0
 
 
 @dataclass
@@ -157,55 +213,12 @@ score_factory = {
 }
 
 
-def read_file(file_path: str) -> list[str]:
-    with open(file_path, encoding='utf-8') as f:
-        lines = f.readlines()
-    return lines
-
-
-def cal_points(name: str, weekday: str):
-    player = players.get_player_add_if_new(name)
-    player.cal_points(WeekdayEnum(weekday))
-
-
-def separate_section_for_removing_print():
-    print("\nRemoved player")
-    print("==============")
-
-
-def is_removing_candi(id):
-    player = players[id]
-
-    return player.grade not in (1, 2) and player.wed == 0 and player.weekend == 0
-
-
-def print_player_grade(id):
-    player = players[id]
-    print(f"NAME : {player.name}, POINT : {player.point}, GRADE : ", end="")
-    if player.grade == 1:
-        print("GOLD")
-    elif player.grade == 2:
-        print("SILVER")
-    else:
-        print("NORMAL")
-
-
 def run():
-    for line in file_manager.lines:
-        parts = file_manager.parse_data(line)
-        cal_points(parts.name, parts.weekday)
+    players = Players()
+    file_manager = FileManager(FILE_PATH)
 
-    for player in players:
-        player.cal_special_points()
-        player.cal_grade()
-
-    for id in range(1, players.num_players + 1):
-        print_player_grade(id)
-
-    separate_section_for_removing_print()
-    for id in range(1, players.num_players + 1):
-        if is_removing_candi(id):
-            print(players[id].name)
+    manager = AttendanceManager(players, file_manager)
+    manager.run()
 
 
 if __name__ == "__main__":
