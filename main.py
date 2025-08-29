@@ -2,19 +2,20 @@ from collections import defaultdict
 from enum import Enum
 from dataclasses import dataclass
 
+FILE_PATH = "attendance_weekday_500.txt"
+MAX_PLAYERS = 100
+
 players = {}
 
 id_cnt = 0
 
-MAX_PALYERS = 100
-
 # dat[사용자ID][요일]
-dat = [defaultdict(int) for _ in range(MAX_PALYERS)]
-points = [0] * MAX_PALYERS
-grade = [0] * MAX_PALYERS
-names = [''] * MAX_PALYERS
-wed = [0] * MAX_PALYERS
-weekend = [0] * MAX_PALYERS
+dat = [defaultdict(int) for _ in range(MAX_PLAYERS)]
+points = [0] * MAX_PLAYERS
+grade = [0] * MAX_PLAYERS
+names = [''] * MAX_PLAYERS
+wed = [0] * MAX_PLAYERS
+weekend = [0] * MAX_PLAYERS
 
 
 class WeekdayEnum(Enum):
@@ -71,7 +72,7 @@ def add_player(w):
 
 def input_file():
     try:
-        with open("attendance_weekday_500.txt", encoding='utf-8') as f:
+        with open(FILE_PATH, encoding='utf-8') as f:
             for _ in range(500):
                 line = f.readline()
                 if not line:
