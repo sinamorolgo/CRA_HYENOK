@@ -24,9 +24,9 @@ class AbstractPlayer(ABC):
         self.id = id
         self.dat = defaultdict(int)
         self.point = 0
-        self.grade = -1
         self.wed = 0
         self.weekend = 0
+        self.grade: AbstractGrade | None = None
 
     @abstractmethod
     def cal_points(self, weekday: WeekdayEnum):
@@ -41,15 +41,48 @@ class AbstractPlayer(ABC):
         ...
 
 
+class AbstractGrade(ABC):
+    @abstractmethod
+    def __str__(self):
+        ...
+
+    def print(self):
+        print(str(self))
+
+
+class GoldGrade(AbstractGrade):
+    def __str__(self):
+        return "GOLD"
+
+
+class SilverGrade(AbstractGrade):
+    def __str__(self):
+        return "SILVER"
+
+
+class NormalGrade(AbstractGrade):
+    def __str__(self):
+        return "NORMAL"
+
+
+def grade_factory(point):
+    if point >= 50:
+        return GoldGrade()
+    elif point >= 30:
+        return SilverGrade()
+    else:
+        return NormalGrade()
+
+
 class Player:
     def __init__(self, name, id):
         self.name = name
         self.id = id
         self.dat = defaultdict(int)
         self.point = 0
-        self.grade = -1
         self.wed = 0
         self.weekend = 0
+        self.grade = -1
 
     def cal_points(self, weekday: WeekdayEnum):
         score_policy = score_factory[weekday]
@@ -65,21 +98,16 @@ class Player:
             self.point += 10
 
     def cal_grade(self):
-        if self.point >= 50:
-            self.grade = 1
-        elif self.point >= 30:
-            self.grade = 2
-        else:
-            self.grade = 0
+        self.grade = grade_factory(self.point)
 
 
 class AbstractPlayers(ABC):
     @abstractmethod
-    def get_player_add_if_new(self, name: str)->AbstractPlayer:
+    def get_player_add_if_new(self, name: str) -> AbstractPlayer:
         ...
 
     @abstractmethod
-    def __iter__(self)->Iterator[AbstractPlayer]:
+    def __iter__(self) -> Iterator[AbstractPlayer]:
         ...
 
     @abstractmethod
@@ -179,12 +207,7 @@ class AttendanceManager:
     def print_player_grade(self, id: int):
         player = self.players[id]
         print(f"NAME : {player.name}, POINT : {player.point}, GRADE : ", end="")
-        if player.grade == 1:
-            print("GOLD")
-        elif player.grade == 2:
-            print("SILVER")
-        else:
-            print("NORMAL")
+        player.grade.print()
 
     def separate_section_for_removing_print(self):
         print("\nRemoved player")
