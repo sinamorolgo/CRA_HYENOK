@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import Enum
+from dataclasses import dataclass
 
 players = {}
 
@@ -13,7 +14,8 @@ points = [0] * MAX_PALYERS
 grade = [0] * MAX_PALYERS
 names = [''] * MAX_PALYERS
 wed = [0] * MAX_PALYERS
-weeken = [0] * MAX_PALYERS
+weekend = [0] * MAX_PALYERS
+
 
 class WeekdayEnum(Enum):
     monday = "monday"
@@ -25,35 +27,38 @@ class WeekdayEnum(Enum):
     sunday = "sunday"
 
 
+@dataclass
+class PointPolicy:
+    point: int
+    wednesday: int
+    weekend: int
 
-def cal_score(name: str, weekday: str):
+
+score_factory = {
+    WeekdayEnum.monday: PointPolicy(1, 0, 0),
+    WeekdayEnum.tuesday: PointPolicy(1, 0, 0),
+    WeekdayEnum.wednesday: PointPolicy(3, 1, 0),
+    WeekdayEnum.thursday: PointPolicy(1, 0, 0),
+    WeekdayEnum.friday: PointPolicy(1, 0, 0),
+    WeekdayEnum.saturday: PointPolicy(2, 0, 1),
+    WeekdayEnum.sunday: PointPolicy(2, 0, 1),
+}
+
+
+def cal_points(name: str, weekday: str):
     global id_cnt
 
     add_player(name)
     cur_id = players[name]
 
-    add_point = 0
+    weekday_enum = WeekdayEnum(weekday)
 
-    if weekday == WeekdayEnum.monday.value:
-        add_point += 1
-    elif weekday == WeekdayEnum.tuesday.value:
-        add_point += 1
-    elif weekday == WeekdayEnum.wednesday.value:
-        add_point += 3
-        wed[cur_id] += 1
-    elif weekday == WeekdayEnum.thursday.value:
-        add_point += 1
-    elif weekday == WeekdayEnum.friday.value:
-        add_point += 1
-    elif weekday == WeekdayEnum.saturday.value:
-        add_point += 2
-        weeken[cur_id] += 1
-    elif weekday == WeekdayEnum.sunday.value:
-        add_point += 2
-        weeken[cur_id] += 1
+    score_policy = score_factory[weekday_enum]
+    points[cur_id] += score_policy.point
+    wed[cur_id] += score_policy.wednesday
+    weekend[cur_id] += score_policy.weekend
 
-    dat[cur_id][weekday] += 1
-    points[cur_id] += add_point
+    dat[cur_id][weekday_enum] += 1
 
 
 def add_player(w):
@@ -73,7 +78,7 @@ def input_file():
                     break
                 parts = line.strip().split()
                 if len(parts) == 2:
-                    cal_score(parts[0], parts[1])
+                    cal_points(parts[0], parts[1])
 
         for i in range(1, id_cnt + 1):
             if dat[i][2] > 9:
@@ -99,7 +104,7 @@ def input_file():
         print("\nRemoved player")
         print("==============")
         for i in range(1, id_cnt + 1):
-            if grade[i] not in (1, 2) and wed[i] == 0 and weeken[i] == 0:
+            if grade[i] not in (1, 2) and wed[i] == 0 and weekend[i] == 0:
                 print(names[i])
 
     except FileNotFoundError:
