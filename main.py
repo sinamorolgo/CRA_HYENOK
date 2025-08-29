@@ -81,9 +81,9 @@ def input_file():
                     cal_points(parts[0], parts[1])
 
         for i in range(1, id_cnt + 1):
-            if dat[i][2] > 9:
+            if dat[i][WeekdayEnum.wednesday] > 9:
                 points[i] += 10
-            if dat[i][5] + dat[i][6] > 9:
+            if dat[i][WeekdayEnum.saturday] + dat[i][WeekdayEnum.sunday] > 9:
                 points[i] += 10
 
             if points[i] >= 50:
