@@ -46,6 +46,20 @@ score_factory = {
 }
 
 
+def read_file(file_path):
+    with open(file_path, encoding='utf-8') as f:
+        lines = f.readlines()
+    return lines
+
+
+def add_player(w):
+    global id_cnt
+    if w not in players:
+        id_cnt += 1
+        players[w] = id_cnt
+        names[id_cnt] = w
+
+
 def cal_points(name: str, weekday: str):
     global id_cnt
 
@@ -62,48 +76,23 @@ def cal_points(name: str, weekday: str):
     dat[cur_id][weekday_enum] += 1
 
 
-def add_player(w):
-    global id_cnt
-    if w not in players:
-        id_cnt += 1
-        players[w] = id_cnt
-        names[id_cnt] = w
+def separate_section_for_removing_print():
+    print("\nRemoved player")
+    print("==============")
 
 
-def read_file(file_path):
-    with open(file_path, encoding='utf-8') as f:
-        lines = f.readlines()
-    return lines
+def is_removing_candi(id):
+    return grade[id] not in (1, 2) and wed[id] == 0 and weekend[id] == 0
 
 
-def run():
-    try:
-        lines = read_file(FILE_PATH)
-        for line in lines:
-            parts = parse_data(line)
-            cal_points(name=parts[0], weekday=parts[1])
-
-        for id in range(1, id_cnt + 1):
-            cal_special_points(id)
-            grade[id] = get_grade(points[id])
-
-        for id in range(1, id_cnt + 1):
-            print(f"NAME : {names[id]}, POINT : {points[id]}, GRADE : ", end="")
-            if grade[id] == 1:
-                print("GOLD")
-            elif grade[id] == 2:
-                print("SILVER")
-            else:
-                print("NORMAL")
-
-        print("\nRemoved player")
-        print("==============")
-        for id in range(1, id_cnt + 1):
-            if grade[id] not in (1, 2) and wed[id] == 0 and weekend[id] == 0:
-                print(names[id])
-
-    except FileNotFoundError:
-        print("파일을 찾을 수 없습니다.")
+def print_player_grade(id):
+    print(f"NAME : {names[id]}, POINT : {points[id]}, GRADE : ", end="")
+    if grade[id] == 1:
+        print("GOLD")
+    elif grade[id] == 2:
+        print("SILVER")
+    else:
+        print("NORMAL")
 
 
 def get_grade(point):
@@ -127,6 +116,29 @@ def parse_data(line):
     if len(parts) != 2:
         raise ValueError
     return parts
+
+
+def run():
+    try:
+        lines = read_file(FILE_PATH)
+    except FileNotFoundError:
+        raise ("파일을 찾을 수 없습니다.")
+
+    for line in lines:
+        parts = parse_data(line)
+        cal_points(name=parts[0], weekday=parts[1])
+
+    for id in range(1, id_cnt + 1):
+        cal_special_points(id)
+        grade[id] = get_grade(points[id])
+
+    for id in range(1, id_cnt + 1):
+        print_player_grade(id)
+
+    separate_section_for_removing_print()
+    for id in range(1, id_cnt + 1):
+        if is_removing_candi(id):
+            print(names[id])
 
 
 if __name__ == "__main__":
