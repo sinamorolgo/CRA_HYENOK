@@ -1,9 +1,9 @@
 import pytest #noqa
 
-from main import input_file
+from main import run
 
 def test_print_output(capsys):
-    input_file()
+    run()
     captured = capsys.readouterr()
 
     with open(r"C:\Users\User\PycharmProjects\CRA_HYENOK\results.txt") as f:

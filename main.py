@@ -76,42 +76,50 @@ def read_file(file_path):
     return lines
 
 
-def input_file():
+def run():
     try:
         lines = read_file(FILE_PATH)
         for line in lines:
             parts = parse_data(line)
             cal_points(name=parts[0], weekday=parts[1])
 
-        for i in range(1, id_cnt + 1):
-            if dat[i][WeekdayEnum.wednesday] > 9:
-                points[i] += 10
-            if dat[i][WeekdayEnum.saturday] + dat[i][WeekdayEnum.sunday] > 9:
-                points[i] += 10
+        for id in range(1, id_cnt + 1):
+            cal_special_points(id)
+            grade[id] = get_grade(points[id])
 
-            if points[i] >= 50:
-                grade[i] = 1
-            elif points[i] >= 30:
-                grade[i] = 2
-            else:
-                grade[i] = 0
-
-            print(f"NAME : {names[i]}, POINT : {points[i]}, GRADE : ", end="")
-            if grade[i] == 1:
+        for id in range(1, id_cnt + 1):
+            print(f"NAME : {names[id]}, POINT : {points[id]}, GRADE : ", end="")
+            if grade[id] == 1:
                 print("GOLD")
-            elif grade[i] == 2:
+            elif grade[id] == 2:
                 print("SILVER")
             else:
                 print("NORMAL")
 
         print("\nRemoved player")
         print("==============")
-        for i in range(1, id_cnt + 1):
-            if grade[i] not in (1, 2) and wed[i] == 0 and weekend[i] == 0:
-                print(names[i])
+        for id in range(1, id_cnt + 1):
+            if grade[id] not in (1, 2) and wed[id] == 0 and weekend[id] == 0:
+                print(names[id])
 
     except FileNotFoundError:
         print("파일을 찾을 수 없습니다.")
+
+
+def get_grade(point):
+    if point >= 50:
+        return 1
+    elif point >= 30:
+        return 2
+    else:
+        return 0
+
+
+def cal_special_points(id: int):
+    if dat[id][WeekdayEnum.wednesday] > 9:
+        points[id] += 10
+    if dat[id][WeekdayEnum.saturday] + dat[id][WeekdayEnum.sunday] > 9:
+        points[id] += 10
 
 
 def parse_data(line):
@@ -122,4 +130,4 @@ def parse_data(line):
 
 
 if __name__ == "__main__":
-    input_file()
+    run()
