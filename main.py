@@ -70,16 +70,18 @@ def add_player(w):
         names[id_cnt] = w
 
 
+def read_file(file_path):
+    with open(file_path, encoding='utf-8') as f:
+        lines = f.readlines()
+    return lines
+
+
 def input_file():
     try:
-        with open(FILE_PATH, encoding='utf-8') as f:
-            for _ in range(500):
-                line = f.readline()
-                if not line:
-                    break
-                parts = line.strip().split()
-                if len(parts) == 2:
-                    cal_points(parts[0], parts[1])
+        lines = read_file(FILE_PATH)
+        for line in lines:
+            parts = parse_data(line)
+            cal_points(name=parts[0], weekday=parts[1])
 
         for i in range(1, id_cnt + 1):
             if dat[i][WeekdayEnum.wednesday] > 9:
@@ -110,6 +112,13 @@ def input_file():
 
     except FileNotFoundError:
         print("파일을 찾을 수 없습니다.")
+
+
+def parse_data(line):
+    parts = line.strip().split()
+    if len(parts) != 2:
+        raise ValueError
+    return parts
 
 
 if __name__ == "__main__":
