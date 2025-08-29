@@ -18,36 +18,10 @@ class WeekdayEnum(Enum):
     sunday = "sunday"
 
 
-class AbstractPlayer(ABC):
-    def __init__(self, name, id):
-        self.name = name
-        self.id = id
-        self.dat = defaultdict(int)
-        self.point = 0
-        self.wed = 0
-        self.weekend = 0
-        self.grade: AbstractGrade | None = None
-
-    @abstractmethod
-    def cal_points(self, weekday: WeekdayEnum):
-        ...
-
-    @abstractmethod
-    def cal_special_points(self):
-        ...
-
-    @abstractmethod
-    def cal_grade(self):
-        ...
-
-
 class AbstractGrade(ABC):
     @abstractmethod
     def __str__(self):
         ...
-
-    def print(self):
-        print(str(self))
 
 
 class GoldGrade(AbstractGrade):
@@ -74,7 +48,7 @@ def grade_factory(point):
         return NormalGrade()
 
 
-class Player:
+class AbstractPlayer(ABC):
     def __init__(self, name, id):
         self.name = name
         self.id = id
@@ -82,7 +56,24 @@ class Player:
         self.point = 0
         self.wed = 0
         self.weekend = 0
-        self.grade = -1
+        self.grade: AbstractGrade | None = None
+
+    @abstractmethod
+    def cal_points(self, weekday: WeekdayEnum):
+        ...
+
+    @abstractmethod
+    def cal_special_points(self):
+        ...
+
+    @abstractmethod
+    def cal_grade(self):
+        ...
+
+
+class Player(AbstractPlayer):
+    def __init__(self, name, id):
+        super().__init__(name, id)
 
     def cal_points(self, weekday: WeekdayEnum):
         score_policy = score_factory[weekday]
@@ -181,10 +172,34 @@ class FileManager(AbstractFileManager):
         return DataLine(name=parts[0], weekday=parts[1])
 
 
+class AbstractFormatter(ABC):
+    @staticmethod
+    @abstractmethod
+    def print_player_grade(player: AbstractPlayer):
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def separate_section_for_removing_print():
+        ...
+
+
+class Formatter(AbstractFormatter):
+    @staticmethod
+    def print_player_grade(player: AbstractPlayer):
+        print(f"NAME : {player.name}, POINT : {player.point}, GRADE : {player.grade}", end="")
+
+    @staticmethod
+    def separate_section_for_removing_print():
+        print("\nRemoved player")
+        print("==============")
+
+
 class AttendanceManager:
-    def __init__(self, players: AbstractPlayers, file_manager: AbstractFileManager):
+    def __init__(self, players: AbstractPlayers, file_manager: AbstractFileManager, formatter: AbstractFormatter):
         self.players = players
         self.file_manager = file_manager
+        self.formatter = formatter
 
     def run(self):
         for line in self.file_manager.lines:
@@ -197,21 +212,12 @@ class AttendanceManager:
             player.cal_grade()
 
         for id in range(1, self.players.num_players + 1):
-            self.print_player_grade(id)
+            self.formatter.print_player_grade(self.players[id])
 
-        self.separate_section_for_removing_print()
+        self.formatter.separate_section_for_removing_print()
         for id in range(1, self.players.num_players + 1):
             if self.is_removing_candi(id):
                 print(self.players[id].name)
-
-    def print_player_grade(self, id: int):
-        player = self.players[id]
-        print(f"NAME : {player.name}, POINT : {player.point}, GRADE : ", end="")
-        player.grade.print()
-
-    def separate_section_for_removing_print(self):
-        print("\nRemoved player")
-        print("==============")
 
     def is_removing_candi(self, id):
         player = self.players[id]
@@ -239,8 +245,8 @@ score_factory = {
 def run():
     players = Players()
     file_manager = FileManager(FILE_PATH)
-
-    manager = AttendanceManager(players, file_manager)
+    formatter = Formatter()
+    manager = AttendanceManager(players, file_manager, formatter)
     manager.run()
 
 
