@@ -1,15 +1,29 @@
+from collections import defaultdict
+from enum import Enum
+
 players = {}
+
 id_cnt = 0
 
 MAX_PALYERS = 100
 
 # dat[사용자ID][요일]
-dat = [[0] * MAX_PALYERS for _ in range(MAX_PALYERS)]
+dat = [defaultdict(int) for _ in range(MAX_PALYERS)]
 points = [0] * MAX_PALYERS
 grade = [0] * MAX_PALYERS
 names = [''] * MAX_PALYERS
 wed = [0] * MAX_PALYERS
 weeken = [0] * MAX_PALYERS
+
+class WeekdayEnum(Enum):
+    monday = "monday"
+    tuesday = "tuesday"
+    wednesday = "wednesday"
+    thursday = "thursday"
+    friday = "friday"
+    saturday = "saturday"
+    sunday = "sunday"
+
 
 
 def cal_score(name: str, weekday: str):
@@ -19,34 +33,26 @@ def cal_score(name: str, weekday: str):
     cur_id = players[name]
 
     add_point = 0
-    index = 0
 
-    if weekday == "monday":
-        index = 0
+    if weekday == WeekdayEnum.monday.value:
         add_point += 1
-    elif weekday == "tuesday":
-        index = 1
+    elif weekday == WeekdayEnum.tuesday.value:
         add_point += 1
-    elif weekday == "wednesday":
-        index = 2
+    elif weekday == WeekdayEnum.wednesday.value:
         add_point += 3
         wed[cur_id] += 1
-    elif weekday == "thursday":
-        index = 3
+    elif weekday == WeekdayEnum.thursday.value:
         add_point += 1
-    elif weekday == "friday":
-        index = 4
+    elif weekday == WeekdayEnum.friday.value:
         add_point += 1
-    elif weekday == "saturday":
-        index = 5
+    elif weekday == WeekdayEnum.saturday.value:
         add_point += 2
         weeken[cur_id] += 1
-    elif weekday == "sunday":
-        index = 6
+    elif weekday == WeekdayEnum.sunday.value:
         add_point += 2
         weeken[cur_id] += 1
 
-    dat[cur_id][index] += 1
+    dat[cur_id][weekday] += 1
     points[cur_id] += add_point
 
 
