@@ -48,6 +48,17 @@ def grade_factory(point):
         return NormalGrade()
 
 
+class SpecialPointPolicy:
+    @staticmethod
+    def cal(dat):
+        point = 0
+        if dat[WeekdayEnum.wednesday] > 9:
+            point += 10
+        if dat[WeekdayEnum.saturday] + dat[WeekdayEnum.sunday] > 9:
+            point += 10
+        return point
+
+
 class AbstractPlayer(ABC):
     def __init__(self, name, id):
         self.name = name
@@ -74,6 +85,7 @@ class AbstractPlayer(ABC):
 class Player(AbstractPlayer):
     def __init__(self, name, id):
         super().__init__(name, id)
+        self.special_policy = SpecialPointPolicy()
 
     def cal_points(self, weekday: WeekdayEnum):
         score_policy = score_factory[weekday]
@@ -83,10 +95,7 @@ class Player(AbstractPlayer):
         self.dat[weekday] += 1
 
     def cal_special_points(self):
-        if self.dat[WeekdayEnum.wednesday] > 9:
-            self.point += 10
-        if self.dat[WeekdayEnum.saturday] + self.dat[WeekdayEnum.sunday] > 9:
-            self.point += 10
+        self.point += self.special_policy.cal(self.dat)
 
     def cal_grade(self):
         self.grade = grade_factory(self.point)
@@ -195,6 +204,10 @@ class Formatter(AbstractFormatter):
         print("==============")
 
 
+def is_removing_candi(player):
+    return player.grade not in (1, 2) and player.wed == 0 and player.weekend == 0
+
+
 class AttendanceManager:
     def __init__(self, players: AbstractPlayers, file_manager: AbstractFileManager, formatter: AbstractFormatter):
         self.players = players
@@ -216,12 +229,8 @@ class AttendanceManager:
 
         self.formatter.separate_section_for_removing_print()
         for id in range(1, self.players.num_players + 1):
-            if self.is_removing_candi(id):
+            if is_removing_candi(self.players[id]):
                 print(self.players[id].name)
-
-    def is_removing_candi(self, id):
-        player = self.players[id]
-        return player.grade not in (1, 2) and player.wed == 0 and player.weekend == 0
 
 
 @dataclass
