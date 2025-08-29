@@ -5,17 +5,10 @@ from dataclasses import dataclass
 FILE_PATH = "attendance_weekday_500.txt"
 MAX_PLAYERS = 100
 
-players = {}
+players_id = {}
 
 id_cnt = 0
 
-# dat[사용자ID][요일]
-dat = [defaultdict(int) for _ in range(MAX_PLAYERS)]
-points = [0] * MAX_PLAYERS
-grade = [0] * MAX_PLAYERS
-names = [''] * MAX_PLAYERS
-wed = [0] * MAX_PLAYERS
-weekend = [0] * MAX_PLAYERS
 
 
 class WeekdayEnum(Enum):
@@ -26,6 +19,64 @@ class WeekdayEnum(Enum):
     friday = "friday"
     saturday = "saturday"
     sunday = "sunday"
+
+
+class Player:
+    def __init__(self, name, id):
+        self.name = name
+        self.id = id
+        self.dat = defaultdict(int)
+        self.point = 0
+        self.grade = -1
+        self.wed = 0
+        self.weekend = 0
+
+    def cal_points(self, weekday: WeekdayEnum):
+        score_policy = score_factory[weekday]
+        self.point += score_policy.point
+        self.wed += score_policy.wednesday
+        self.weekend += score_policy.weekend
+        self.dat[weekday] += 1
+
+    def cal_special_points(self):
+        if self.dat[WeekdayEnum.wednesday] > 9:
+            self.point += 10
+        if self.dat[WeekdayEnum.saturday] + self.dat[WeekdayEnum.sunday] > 9:
+            self.point += 10
+
+    def cal_grade(self):
+        if self.point >= 50:
+            self.grade = 1
+        elif self.point >= 30:
+            self.grade = 2
+        else:
+            self.grade = 0
+
+
+class Players:
+    def __init__(self):
+        self.players = defaultdict(None)
+        self.map_id = defaultdict(int)
+
+    def get_player_add_if_new(self, name: str):
+        if not name in self.map_id:
+            new_id = self.num_players + 1
+            self.map_id[name] = new_id
+            self.players[new_id] = Player(name, new_id)
+        return self.players[self.map_id[name]]
+
+    @property
+    def num_players(self):
+        return len(self.players)
+
+    def __iter__(self):
+        return iter(self.players.values())
+
+    def __getitem__(self, id):
+        return self.players[id]
+
+
+players = Players()
 
 
 @dataclass
@@ -52,28 +103,17 @@ def read_file(file_path):
     return lines
 
 
-def add_player(w):
+def add_player_if_new(name: str):
     global id_cnt
-    if w not in players:
+    if name not in players_id:
         id_cnt += 1
-        players[w] = id_cnt
-        names[id_cnt] = w
+        players_id[name] = id_cnt
+        names[id_cnt] = name
 
 
 def cal_points(name: str, weekday: str):
-    global id_cnt
-
-    add_player(name)
-    cur_id = players[name]
-
-    weekday_enum = WeekdayEnum(weekday)
-
-    score_policy = score_factory[weekday_enum]
-    points[cur_id] += score_policy.point
-    wed[cur_id] += score_policy.wednesday
-    weekend[cur_id] += score_policy.weekend
-
-    dat[cur_id][weekday_enum] += 1
+    player = players.get_player_add_if_new(name)
+    player.cal_points(WeekdayEnum(weekday))
 
 
 def separate_section_for_removing_print():
@@ -82,14 +122,17 @@ def separate_section_for_removing_print():
 
 
 def is_removing_candi(id):
-    return grade[id] not in (1, 2) and wed[id] == 0 and weekend[id] == 0
+    player = players[id]
+
+    return player.grade not in (1, 2) and player.wed == 0 and player.weekend == 0
 
 
 def print_player_grade(id):
-    print(f"NAME : {names[id]}, POINT : {points[id]}, GRADE : ", end="")
-    if grade[id] == 1:
+    player = players[id]
+    print(f"NAME : {player.name}, POINT : {player.point}, GRADE : ", end="")
+    if player.grade == 1:
         print("GOLD")
-    elif grade[id] == 2:
+    elif player.grade == 2:
         print("SILVER")
     else:
         print("NORMAL")
@@ -102,13 +145,6 @@ def get_grade(point):
         return 2
     else:
         return 0
-
-
-def cal_special_points(id: int):
-    if dat[id][WeekdayEnum.wednesday] > 9:
-        points[id] += 10
-    if dat[id][WeekdayEnum.saturday] + dat[id][WeekdayEnum.sunday] > 9:
-        points[id] += 10
 
 
 def parse_data(line):
@@ -128,17 +164,17 @@ def run():
         parts = parse_data(line)
         cal_points(name=parts[0], weekday=parts[1])
 
-    for id in range(1, id_cnt + 1):
-        cal_special_points(id)
-        grade[id] = get_grade(points[id])
+    for player in players:
+        player.cal_special_points()
+        player.cal_grade()
 
-    for id in range(1, id_cnt + 1):
+    for id in range(1, players.num_players + 1):
         print_player_grade(id)
 
     separate_section_for_removing_print()
-    for id in range(1, id_cnt + 1):
+    for id in range(1, players.num_players + 1):
         if is_removing_candi(id):
-            print(names[id])
+            print(players[id].name)
 
 
 if __name__ == "__main__":
