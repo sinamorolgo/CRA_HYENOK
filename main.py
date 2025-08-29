@@ -1,54 +1,62 @@
-id1 = {}
+players = {}
 id_cnt = 0
 
-# dat[사용자ID][요일]
-dat = [[0] * 100 for _ in range(100)]
-points = [0] * 100
-grade = [0] * 100
-names = [''] * 100
-wed = [0] * 100
-weeken = [0] * 100
+MAX_PALYERS = 100
 
-def input2(w, wk):
+# dat[사용자ID][요일]
+dat = [[0] * MAX_PALYERS for _ in range(MAX_PALYERS)]
+points = [0] * MAX_PALYERS
+grade = [0] * MAX_PALYERS
+names = [''] * MAX_PALYERS
+wed = [0] * MAX_PALYERS
+weeken = [0] * MAX_PALYERS
+
+
+def cal_score(name: str, weekday: str):
     global id_cnt
 
-    if w not in id1:
-        id_cnt += 1
-        id1[w] = id_cnt
-        names[id_cnt] = w
-
-    id2 = id1[w]
+    add_player(name)
+    cur_id = players[name]
 
     add_point = 0
     index = 0
 
-    if wk == "monday":
+    if weekday == "monday":
         index = 0
         add_point += 1
-    elif wk == "tuesday":
+    elif weekday == "tuesday":
         index = 1
         add_point += 1
-    elif wk == "wednesday":
+    elif weekday == "wednesday":
         index = 2
         add_point += 3
-        wed[id2] += 1
-    elif wk == "thursday":
+        wed[cur_id] += 1
+    elif weekday == "thursday":
         index = 3
         add_point += 1
-    elif wk == "friday":
+    elif weekday == "friday":
         index = 4
         add_point += 1
-    elif wk == "saturday":
+    elif weekday == "saturday":
         index = 5
         add_point += 2
-        weeken[id2] += 1
-    elif wk == "sunday":
+        weeken[cur_id] += 1
+    elif weekday == "sunday":
         index = 6
         add_point += 2
-        weeken[id2] += 1
+        weeken[cur_id] += 1
 
-    dat[id2][index] += 1
-    points[id2] += add_point
+    dat[cur_id][index] += 1
+    points[cur_id] += add_point
+
+
+def add_player(w):
+    global id_cnt
+    if w not in players:
+        id_cnt += 1
+        players[w] = id_cnt
+        names[id_cnt] = w
+
 
 def input_file():
     try:
@@ -59,7 +67,7 @@ def input_file():
                     break
                 parts = line.strip().split()
                 if len(parts) == 2:
-                    input2(parts[0], parts[1])
+                    cal_score(parts[0], parts[1])
 
         for i in range(1, id_cnt + 1):
             if dat[i][2] > 9:
@@ -90,6 +98,7 @@ def input_file():
 
     except FileNotFoundError:
         print("파일을 찾을 수 없습니다.")
+
 
 if __name__ == "__main__":
     input_file()
